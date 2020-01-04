@@ -28,5 +28,9 @@ namespace TL539WebApi.ResourceParameters
 		/// 容易開出的數字的 後 的第幾期 (單一期)
 		/// </summary>
 		public int NextWhichPeriod { get; set; }
+		/// <summary>
+		/// 連莊幾期
+		/// </summary>
+		public int SameDealerNumberHowManyTimes { get; set; }
 	}
 }

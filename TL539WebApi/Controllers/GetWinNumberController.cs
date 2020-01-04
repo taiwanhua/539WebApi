@@ -455,5 +455,159 @@ namespace TL539WebApi.Controllers
 			}
 
 		}
+		/// <summary>
+		/// 查詢連莊的號碼 下一期開什麼
+		/// </summary>
+		/// <param name="winNumberResourceParameters"></param>
+		/// <returns></returns>
+		[HttpGet("GetSameDealerNumber")]
+		public ActionResult<IEnumerable<WinNumber>> GetSameDealerNumber([FromQuery] WinNumberResourceParameters winNumberResourceParameters)
+		{
+			//winNumberResourceParameters.lasterPeriod
+			//winNumberResourceParameters.EasyDrawNumber1  
+			//winNumberResourceParameters.SameDealerNumberHowManyTimes (連莊期數)
+			try
+			{
+				if (winNumberResourceParameters.lasterPeriod == 0)
+				{
+					return Ok(new { ok = "請檢查是否輸入完整" });
+				}
+				if (winNumberResourceParameters.SameDealerNumberHowManyTimes == 0)
+				{
+					return Ok(new { ok = "請檢查是否輸入完整" });
+				}
+				var Queryresult = _winNumberRepository.GetlasterPeriod(winNumberResourceParameters.lasterPeriod);
+
+				#region 處理傳入的EasyDrawNumber1陣列
+				if (winNumberResourceParameters.EasyDrawNumber1 != null)
+				{
+					var EasyDrawNumber1List = new List<string>();//當期開獎要同時包含的數字們
+					foreach (var item in winNumberResourceParameters.EasyDrawNumber1)
+					{
+						var EasyDrawNumber1ToString = item.ToString();
+						if (item.ToString().Length == 1)
+						{
+							EasyDrawNumber1ToString = "0" + item.ToString();
+						}
+						EasyDrawNumber1List.Add(EasyDrawNumber1ToString);
+					}
+					var NextWhichPeriodIndexList = new List<int>();//要統計的期數List
+
+					for (int i = 0; i < Queryresult.Count(); i++)
+					{
+						if ((i + winNumberResourceParameters.SameDealerNumberHowManyTimes) < Queryresult.Count())
+						{
+
+							//var howManyTimesDic = new Dictionary<String, List<string>>();
+							var matchCondiction = false;
+							var allcontain = 0;
+							for (int howManyTimes = 0; howManyTimes < winNumberResourceParameters.SameDealerNumberHowManyTimes; howManyTimes++)
+							{
+								var ASCsList = new List<String>();
+								ASCsList.Add(Queryresult[i + howManyTimes].ASC1);
+								ASCsList.Add(Queryresult[i + howManyTimes].ASC2);
+								ASCsList.Add(Queryresult[i + howManyTimes].ASC3);
+								ASCsList.Add(Queryresult[i + howManyTimes].ASC4);
+								ASCsList.Add(Queryresult[i + howManyTimes].ASC5);
+								//howManyTimesDic.Add("ASCsList" + howManyTimes, ASCsList);
+
+								//allcontain = 0;
+								var containcount = 0;
+								foreach (var item1 in EasyDrawNumber1List)
+								{
+									if (ASCsList.Contains(item1))
+									{
+										containcount++;
+									}
+
+								}
+								if (containcount == EasyDrawNumber1List.Count)
+								{
+									allcontain++;
+								}
+
+							}
+
+							if (allcontain == winNumberResourceParameters.SameDealerNumberHowManyTimes)
+							{
+								matchCondiction = true;
+							}
+							if (matchCondiction)
+							{
+								NextWhichPeriodIndexList.Add(i + winNumberResourceParameters.SameDealerNumberHowManyTimes);
+							}
+						}
+
+					}
+					//
+					#endregion
+					#region 單一數字的
+					//var EasyDrawNumber1ToString = winNumberResourceParameters.EasyDrawNumber1.ToString();
+					//if (winNumberResourceParameters.EasyDrawNumber1.ToString().Length == 2)
+					//{
+					//	EasyDrawNumber1ToString = winNumberResourceParameters.EasyDrawNumber1.ToString().Substring(1);
+					//}
+					//var NextWhichPeriodIndexList = new List<int>();//要統計的期數List
+					//foreach (var item in Queryresult)
+					//{
+					//	if (item.ASC1.Substring(1).Equals(EasyDrawNumber1ToString) ||
+					//		item.ASC2.Substring(1).Equals(EasyDrawNumber1ToString) ||
+					//		item.ASC3.Substring(1).Equals(EasyDrawNumber1ToString) ||
+					//		item.ASC4.Substring(1).Equals(EasyDrawNumber1ToString) ||
+					//		item.ASC5.Substring(1).Equals(EasyDrawNumber1ToString))
+					//	{
+					//		//如果本期開獎包含了 某尾數，就去找他的後幾期(超過總期數不計入考慮)
+					//		if (!((Queryresult.IndexOf(item) + winNumberResourceParameters.NextWhichPeriod) > (Queryresult.Count - 1)))
+					//		{
+					//			NextWhichPeriodIndexList.Add(Queryresult.IndexOf(item) + winNumberResourceParameters.NextWhichPeriod);
+					//		}
+
+					//	}
+
+					//}
+					#endregion
+					//開始統計
+					var allNumberWithoutCount = new List<String>();
+					foreach (var item in NextWhichPeriodIndexList)
+					{
+						allNumberWithoutCount.Add(Queryresult[item].ASC1);
+						allNumberWithoutCount.Add(Queryresult[item].ASC2);
+						allNumberWithoutCount.Add(Queryresult[item].ASC3);
+						allNumberWithoutCount.Add(Queryresult[item].ASC4);
+						allNumberWithoutCount.Add(Queryresult[item].ASC5);
+					}
+					var countDic = new Dictionary<string, int>();
+					for (int i = 1; i < 40; i++)
+					{
+						var iString = i.ToString();
+						if (iString.Length == 1)
+						{
+							iString = "0" + i.ToString();
+						}
+						if (allNumberWithoutCount.Contains(iString))
+						{
+							var howManyTimes = 0;
+							foreach (var item in allNumberWithoutCount)
+							{
+								if (item == iString)
+								{
+									howManyTimes++;
+								}
+							}
+							countDic.Add(iString, howManyTimes);
+						}
+					}
+					return Ok(new { ok = countDic });
+				}
+				return Ok(new { ok = "請檢查是否輸入完整" });
+			}
+			catch (Exception)
+			{
+
+				throw;
+			}
+
+		}
+
 	}
 }
