@@ -32,5 +32,9 @@ namespace TL539WebApi.ResourceParameters
 		/// 連莊幾期
 		/// </summary>
 		public int SameDealerNumberHowManyTimes { get; set; }
+		/// <summary>
+		/// 同時開出"幾個"數字
+		/// </summary>
+		public int CountOfSameOpenNumber { get; set; }
 	}
 }

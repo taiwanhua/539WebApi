@@ -609,5 +609,265 @@ namespace TL539WebApi.Controllers
 
 		}
 
+		/// <summary>
+		/// 查詢同時開出次數統計，1-5
+		/// </summary>
+		/// <param name="winNumberResourceParameters"></param>
+		/// <returns></returns>
+		[HttpGet("GetNumberTimes")]
+		public ActionResult<IEnumerable<WinNumber>> GetNumberTimes([FromQuery] WinNumberResourceParameters winNumberResourceParameters)
+		{
+
+			try
+			{
+				if (winNumberResourceParameters.lasterPeriod == 0)
+				{
+					return Ok(new { ok = "請檢查是否輸入完整" });
+				}
+				if (winNumberResourceParameters.CountOfSameOpenNumber == 0)
+				{
+					return Ok(new { ok = "請檢查是否輸入完整" });
+				}
+				var CountOfSameOpenNumber = winNumberResourceParameters.CountOfSameOpenNumber;
+				var Queryresult = _winNumberRepository.GetlasterPeriod(winNumberResourceParameters.lasterPeriod);
+
+				var statisticResult = "";
+				var dicOfstatistic = new Dictionary<String, int>();
+				if (Queryresult.Count > 0)
+				{
+					foreach (var item in Queryresult)
+					{
+						var perPeriod = new string[] { item.ASC1, item.ASC2, item.ASC3, item.ASC4, item.ASC5 };
+						switch (CountOfSameOpenNumber.ToString())
+						{
+							case "1":
+								#region 一個數字同時開出統計
+								foreach (var item1 in CArrayGetHowMany(perPeriod, 1))
+								{
+									if (dicOfstatistic.ContainsKey(item1))
+									{
+										dicOfstatistic[item1] = dicOfstatistic[item1] + 1;
+									}
+									else
+									{
+										dicOfstatistic.Add(item1, 1);
+									}
+								}
+								#endregion
+								break;
+							case "2":
+								#region 兩個數字同時開出統計
+								foreach (var item1 in CArrayGetHowMany(perPeriod, 2))
+								{
+									if (dicOfstatistic.ContainsKey(item1))
+									{
+										dicOfstatistic[item1] = dicOfstatistic[item1] + 1;
+									}
+									else
+									{
+										dicOfstatistic.Add(item1, 1);
+									}
+								}
+								#endregion
+								break;
+							case "3":
+								#region 三個數字同時開出統計
+								foreach (var item1 in CArrayGetHowMany(perPeriod, 3))
+								{
+									if (dicOfstatistic.ContainsKey(item1))
+									{
+										dicOfstatistic[item1] = dicOfstatistic[item1] + 1;
+									}
+									else
+									{
+										dicOfstatistic.Add(item1, 1);
+									}
+								}
+								#endregion
+								break;
+							case "4":
+								#region 四個數字同時開出統計
+								foreach (var item1 in CArrayGetHowMany(perPeriod, 4))
+								{
+									if (dicOfstatistic.ContainsKey(item1))
+									{
+										dicOfstatistic[item1] = dicOfstatistic[item1] + 1;
+									}
+									else
+									{
+										dicOfstatistic.Add(item1, 1);
+									}
+								}
+								#endregion
+								break;
+							case "5":
+								#region 五個數字同時開出統計
+								#endregion
+								foreach (var item1 in CArrayGetHowMany(perPeriod, 5))
+								{
+									if (dicOfstatistic.ContainsKey(item1))
+									{
+										dicOfstatistic[item1] = dicOfstatistic[item1] + 1;
+									}
+									else
+									{
+										dicOfstatistic.Add(item1, 1);
+									}
+								}
+								break;
+						}
+					}
+					var myList = dicOfstatistic.OrderBy(x => x.Value).Reverse().Take(50).Reverse().Select(y => new { number = y.Key, 開出次數 = y.Value });
+					//var myList = dicOfstatistic.OrderBy(x => x.Value).Select(y => new { number = y.Key, 開出次數 = y.Value });
+					return Ok(myList);
+				}
+				return Ok(new { ok = "請檢查是否輸入完整" });
+			}
+			catch (Exception)
+			{
+
+				throw;
+			}
+
+		}
+
+
+		/// <summary>
+		/// 傳入陣列，C5取幾
+		/// </summary>
+		/// <returns></returns>
+		public List<String> CArrayGetHowMany(String[] _periodArr, int _howMany)//[0 1 2 3 4 ]  3
+		{
+			var cResult = new List<String>();
+			var totalC = Cmn(_periodArr.Length, _howMany);
+			#region 進未陣列
+			var order = new List<int>();
+			var carry = new List<int>();
+			for (int i = _periodArr.Length - 1; i > _periodArr.Length - 1 - _howMany; i--)
+			{
+				order.Add(i);
+			}
+			for (int i = order.Count - 1; i > -1; i--)
+			{
+				carry.Add(order[i]);
+			}
+			#endregion
+			#region 初始陣列
+			var init = new List<int>();
+			for (int i = 0; i < _howMany; i++)
+			{
+				init.Add(i);
+			}
+			#endregion
+			#region 求出位置
+			var resultArr = new List<List<int>>();
+			for (int i = 0; i < totalC; i++)
+			{
+				if (i == 0)
+				{
+					var copyInit = new List<int>();
+					for (int u = 0; u < init.Count; u++)
+					{
+						copyInit.Add(init[u]);
+					}
+					resultArr.Add(copyInit);
+				}
+				else
+				{
+					init[_howMany - 1] = init[_howMany - 1] + 1;
+					var copyInit = new List<int>();
+					for (int u = 0; u < init.Count; u++)
+					{
+						copyInit.Add(init[u]);
+					}
+					for (int l = copyInit.Count - 1; l > 0; l--)
+					{
+						if (copyInit[l] > carry[l])
+						{
+							copyInit[l - 1] = copyInit[l - 1] + 1;
+							for (int p = l; p < copyInit.Count; p++)
+							{
+								copyInit[p] = copyInit[p - 1] + 1;
+							}
+
+
+						}
+					}
+
+					for (int o = 0; o < copyInit.Count; o++)
+					{
+						init[o] = copyInit[o];
+					}
+					resultArr.Add(copyInit);
+				}
+
+			}
+			#endregion
+			#region 替換位置為值
+			foreach (var item in resultArr)
+			{
+				var str = "";
+				foreach (var sonOfItem in item)
+				{
+					str += _periodArr[sonOfItem] + ",";
+				}
+				cResult.Add(str);
+			}
+
+			#endregion
+
+
+
+			return cResult;
+		}
+		/// <summary>
+		/// 檢查、處理進位
+		/// </summary>
+		/// <returns></returns>
+		//public List<int> CheckCarrys(List<int> _carrys, List<int> _checkLists)
+		//{
+		//	var checkLists = _checkLists;
+		//	var carrys = _carrys;
+
+		//	for (int i = checkLists.Count - 1; i > 0; i--)
+		//	{
+		//		if (checkLists[i] > carrys[i])
+		//		{
+		//			checkLists[i - 1] = checkLists[i - 1] + 1;
+		//			checkLists[i] = checkLists[i - 1] + 1;
+		//		}
+		//	}
+		//	return checkLists;
+		//}
+
+
+		/// <summary>
+		/// C m 取 n
+		/// </summary>
+		/// <param name="_m">上</param>
+		/// <param name="_n">下</param>
+		/// <returns></returns>
+		public int Cmn(int _m, int _n)
+		{
+			var m = 1;
+			var n = 1;
+			var mn = 1;
+			for (int i = 1; i < _m + 1; i++)
+			{
+				m = m * i;
+			}
+			for (int i = 1; i < _n + 1; i++)
+			{
+				n = n * i;
+			}
+
+			for (int i = 1; i < _m - _n + 1; i++)
+			{
+				mn = mn * i;
+			}
+
+			return m / (n * mn);
+		}
+
 	}
 }
