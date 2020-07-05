@@ -47,18 +47,37 @@ namespace TL539WebApi.Controllers
 				for (int v = 1; v < TotalPage + 1; v++)
 				{
 					var res = await client.GetStringAsync($"https://www.pilio.idv.tw/lto539/list.asp?indexpage={v}&orderby=old");
-					var DrawTable = res.Split(new string[] { "<table class=\"auto-style1\">", "</table>" }, StringSplitOptions.RemoveEmptyEntries)[3];
+					var DrawTable = res.Split(new string[] { "<table class=\"auto-style1\" style=\"margin-bottom:0px\">", "</table>", "<table id=\"ltotable\" class=\"auto-style1\" style=\"margin-top:0px\">", "</table>" }, StringSplitOptions.RemoveEmptyEntries)[3];
 					var DrawDateAndNemberArray1 = DrawTable.Replace("<tr style=\"text-align:center;vertical-align:middle; \">", "<tr style=\"text-align:center;vertical-align:middle; background-color: #FFDBCE;\">")
 						.Replace("\r\n                            ", "")
 						.Replace("\r\n                        ", "")
 						.Split(new string[] { "<td style=\"font-size: 4vmin; font-weight: bold; color: #000000;border-bottom-style: dotted; border-bottom-color: #CCCCCC;text-align:center;padding:0px;vertical-align:middle\">", "</td>", "<td style=\"font-size: 6vmin; font-weight: bold; color: #000000;border-bottom-style: dotted; border-bottom-color: #CCCCCC;text-align:center;padding:0px;vertical-align:middle\">", "</td>" }, StringSplitOptions.RemoveEmptyEntries);
+					//<td style="font-size: 4vmin; font-weight: bold; color: #000000;border-bottom-style: dotted; border-bottom-color: #CCCCCC;text-align:center;padding:0px;vertical-align:middle">2007/01/01<br>(一)</td>
 					//var container = new List<WinNumber>();
 					List<String> DrawDateAndNemberArray = new List<string>(DrawDateAndNemberArray1);
+					//移除最後一列
 					//DrawDateAndNemberArray.RemoveAt(11);
+
+					//因為改成兩部分這裡是下半部分
+					DrawTable = res.Split(new string[] { "<table class=\"auto-style1\" style=\"margin-bottom:0px\">", "</table>", "<table id=\"ltotable\" class=\"auto-style1\" style=\"margin-top:0px\">", "</table>" }, StringSplitOptions.RemoveEmptyEntries)[4];
+					DrawDateAndNemberArray1 = DrawTable.Replace("<tr style=\"text-align:center;vertical-align:middle; \">", "<tr style=\"text-align:center;vertical-align:middle; background-color: #FFDBCE;\">")
+						.Replace("\r\n                            ", "")
+						.Replace("\r\n                        ", "")
+						.Split(new string[] { "<td style=\"font-size: 4vmin; font-weight: bold; color: #000000;border-bottom-style: dotted; border-bottom-color: #CCCCCC;text-align:center;padding:0px;vertical-align:middle\">", "</td>", "<td style=\"font-size: 6vmin; font-weight: bold; color: #000000;border-bottom-style: dotted; border-bottom-color: #CCCCCC;text-align:center;padding:0px;vertical-align:middle\">", "</td>" }, StringSplitOptions.RemoveEmptyEntries);
+					//<td style="font-size: 4vmin; font-weight: bold; color: #000000;border-bottom-style: dotted; border-bottom-color: #CCCCCC;text-align:center;padding:0px;vertical-align:middle">2007/01/01<br>(一)</td>
+					//var container = new List<WinNumber>();
+					List<String> DrawDateAndNemberArray111 = new List<string>(DrawDateAndNemberArray1);
+					DrawDateAndNemberArray111.RemoveAt(0);//因為要合併所以刪除其中無用的資料
+
+					//合併兩部分
+					DrawDateAndNemberArray.AddRange(DrawDateAndNemberArray111);
+					DrawDateAndNemberArray.RemoveAt(0);
+					//DrawDateAndNemberArray.RemoveAt(1);
+
 					var numberContainer = new string[] { };
-					for (int i = 1; i < DrawDateAndNemberArray.Count / 3; i++)
+					for (int i = 1; i < DrawDateAndNemberArray.Count / 3+1; i++)
 					{
-						numberContainer = DrawDateAndNemberArray[i * 3 - 1].Trim().Split(",&nbsp;", StringSplitOptions.RemoveEmptyEntries);
+						numberContainer = DrawDateAndNemberArray[i * 3].Trim().Split(",&nbsp;", StringSplitOptions.RemoveEmptyEntries);
 						//container.Add(
 						//	new WinNumber
 						//	{
@@ -68,12 +87,13 @@ namespace TL539WebApi.Controllers
 						//		ASC3 = numberContainer[2],
 						//		ASC4 = numberContainer[3],
 						//		ASC5 = numberContainer[4]
+						//		ASC5 = numberContainer[4]
 						//	}
 						//	);
 						_winNumberRepository.Add(new WinNumber
 						{
-							Date = int.Parse(DrawDateAndNemberArray[i * 3 - 2].Replace("/", "").Split(new string[] { "<br>(" }, StringSplitOptions.RemoveEmptyEntries)[0]),
-							DayOfWeek = DrawDateAndNemberArray[i * 3 - 2].Split(new string[] { "<br>" }, StringSplitOptions.RemoveEmptyEntries)[1],
+							Date = int.Parse(DrawDateAndNemberArray[i * 3 - 1].Replace("/", "").Split(new string[] { "<br>(" }, StringSplitOptions.RemoveEmptyEntries)[0]),
+							DayOfWeek = DrawDateAndNemberArray[i * 3 - 1].Split(new string[] { "<br>" }, StringSplitOptions.RemoveEmptyEntries)[1],
 							ASC1 = numberContainer[0],
 							ASC2 = numberContainer[1],
 							ASC3 = numberContainer[2],
